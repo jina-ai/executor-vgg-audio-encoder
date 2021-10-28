@@ -1,23 +1,9 @@
-# VGGishAudioEncoder
+# VggishAudioEncoder
+
+**VggishAudioEncoder** is a class that wraps the [VGGISH](https://github.com/tensorflow/models/tree/master/research/audioset/vggish) model for generating embeddings for audio data. 
+
+For more information, such as run executor on gpu, check out [documentation](https://docs.jina.ai/tutorials/gpu-executor/).
+The VGGish paper was originally published [here](https://research.google/pubs/pub45611/).
 
 
-## Usage
-
-#### via Docker image (recommended)
-
-```python
-from jina import Flow
-	
-f = Flow().add(uses='jinahub+docker://VGGishAudioEncoder')
-```
-
-#### via source code
-
-```python
-from jina import Flow
-	
-f = Flow().add(uses='jinahub://VGGishAudioEncoder')
-```
-
-- To override `__init__` args & kwargs, use `.add(..., uses_with: {'key': 'value'})`
-- To override class metas, use `.add(..., uses_metas: {'key': 'value})`
+<!-- version=v0.2 -->

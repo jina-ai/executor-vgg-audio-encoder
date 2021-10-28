@@ -1,4 +1,4 @@
-jtype: VGGishAudioEncoder
+jtype: VggishAudioEncoder
 metas:
   py_modules:
-    - executor.py
+    - executor/__init__.py

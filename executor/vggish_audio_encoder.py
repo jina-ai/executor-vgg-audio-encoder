@@ -167,6 +167,7 @@ class VggishAudioEncoder(Executor):
                     blob_shape_list.append(blob.shape[0])
             elif self._input == 'blob':
                 mel_list = batch_docs.get_attributes('blob')
+                blob_shape_list = [blob.shape[0] for blob in mel_list]
             try:
                 mel_array = np.vstack(mel_list)
             except ValueError as e:

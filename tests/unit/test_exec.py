@@ -80,10 +80,10 @@ def test_encode_single_document(audio_sample_rate):
     ops.reset_default_graph()
     x_audio, sample_rate = audio_sample_rate
     log_mel_examples = vggish_input.waveform_to_examples(x_audio, sample_rate)
-    doc = DocumentArray([Document(blob=log_mel_examples)])
     model = VggishAudioEncoder()
-    model.encode(doc, parameters={})
-    assert doc[0].embedding.shape == (128,)
+    docs = DocumentArray([Document(blob=log_mel_examples)])
+    model.encode(docs=docs)
+    assert docs[0].embedding.shape == (128,)
 
 
 def test_encode_multiple_documents(encoder: VggishAudioEncoder, audio_sample_rate):

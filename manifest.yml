@@ -1,5 +1,5 @@
 manifest_version: 1
 name: VGGishAudioEncoder
-description: This is my dummy executor
+description: The executor wrapping up VGG model for generating embeddings of audio data.
 url: https://github.com/jina-ai/executor-vgg-audio-encoder
-keywords: [encoder, Numpy]
+keywords: [TensorFlow, audio, vgg, mp3, wav]

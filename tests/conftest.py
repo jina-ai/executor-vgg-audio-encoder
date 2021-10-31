@@ -4,6 +4,11 @@ from pathlib import Path
 import pytest
 
 
+@pytest.fixture(scope='function')
+def sample_file():
+    return str(Path(__file__).parents[0] / 'test_data' / 'sample')
+
+
 @pytest.fixture(scope='session')
 def docker_image_name() -> str:
     return Path(__file__).parents[1].stem.lower()

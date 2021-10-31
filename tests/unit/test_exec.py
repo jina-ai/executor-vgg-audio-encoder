@@ -21,28 +21,19 @@ def gpu_encoder() -> VggishAudioEncoder:
 
 
 @pytest.fixture(scope='function')
-def audio_sample_rate():
-    x_audio, sample_rate = librosa.load(
-        Path(__file__).parents[1] / 'test_data/sample.wav'
-    )
+def audio_sample_rate(sample_file):
+    x_audio, sample_rate = librosa.load(f'{sample_file}.wav')
     return x_audio, sample_rate
 
 
 @pytest.fixture(scope="function")
-def nested_docs(audio_sample_rate) -> DocumentArray:
-    audio, sample_rate = audio_sample_rate
-    blob = vggish_input.waveform_to_examples(audio, sample_rate)
-    docs = DocumentArray([Document(id="root1", blob=blob)])
+def nested_docs(audio_sample_rate, sample_file) -> DocumentArray:
+    fn = f'{sample_file}.wav'
+    docs = DocumentArray([Document(id="root1", uri=fn)])
     docs[0].chunks = [
-        Document(id="chunk11", blob=blob),
-        Document(id="chunk12", blob=blob),
-        Document(id="chunk13", blob=blob),
-    ]
+        Document(id=f'chunk1{i}', uri=fn) for i in range(3)]
     docs[0].chunks[0].chunks = [
-        Document(id="chunk111", blob=blob),
-        Document(id="chunk112", blob=blob),
-    ]
-
+        Document(id=f'chunk11{i}', uri=fn) for i in range(2)]
     return docs
 
 
@@ -55,44 +46,41 @@ def test_config():
 def test_no_documents(encoder: VggishAudioEncoder):
     ops.reset_default_graph()
     docs = DocumentArray()
-    encoder.encode(docs=docs, parameters={})
+    encoder.encode(docs=docs)
     assert len(docs) == 0  # SUCCESS
 
 
 def test_none_docs(encoder: VggishAudioEncoder):
     ops.reset_default_graph()
-    encoder.encode(docs=None, parameters={})
+    encoder.encode(docs=None)
 
 
 def test_docs_no_blobs(encoder: VggishAudioEncoder):
     ops.reset_default_graph()
     docs = DocumentArray([Document()])
-    encoder.encode(docs=DocumentArray(), parameters={})
+    encoder.encode(docs=DocumentArray())
     assert len(docs) == 1
     assert docs[0].embedding is None
 
 
-def test_encode_single_document(audio_sample_rate):
+def test_encode_log_mel(audio_sample_rate):
     ops.reset_default_graph()
-    x_audio, sample_rate = audio_sample_rate
-    log_mel_examples = vggish_input.waveform_to_examples(x_audio, sample_rate)
-    doc = DocumentArray([Document(blob=log_mel_examples)])
-    model = VggishAudioEncoder()
-    model.encode(doc, parameters={})
-    assert doc[0].embedding.shape == (128,)
-
-
-def test_encode_multiple_documents(encoder: VggishAudioEncoder, audio_sample_rate):
-    ops.reset_default_graph()
-    x_audio, sample_rate = audio_sample_rate
-    log_mel_examples = vggish_input.waveform_to_examples(x_audio, sample_rate)
-
-    docs = DocumentArray(
-        [Document(blob=log_mel_examples), Document(blob=log_mel_examples)]
-    )
-    encoder.encode(docs, parameters={})
+    model = VggishAudioEncoder(load_input_from='log_mel')
+    audio, sample_rate = audio_sample_rate
+    blob = vggish_input.waveform_to_examples(audio, sample_rate)
+    docs = DocumentArray([Document(blob=blob)])
+    model.encode(docs=docs)
     assert docs[0].embedding.shape == (128,)
-    assert docs[1].embedding.shape == (128,)
+
+
+@pytest.mark.parametrize('num_docs', [4, 16, 128])
+def test_encode_multiple_documents(encoder: VggishAudioEncoder, sample_file, num_docs):
+    ops.reset_default_graph()
+    fn = f'{sample_file}.wav'
+    docs = DocumentArray([Document(uri=fn) for _ in range(num_docs)])
+    encoder.encode(docs, parameters={})
+    for doc in docs:
+        assert doc.embedding.shape == (128,)
 
 
 @pytest.mark.gpu
@@ -125,3 +113,31 @@ def test_traversal_path(
     for path, count in counts:
         embeddings = nested_docs.traverse_flat([path]).get_attributes('embedding')
         assert len([em for em in embeddings if em is not None]) == count
+
+
+@pytest.mark.parametrize('suffix', ['mp3', 'wav'])
+def test_encode_uri(encoder, sample_file, suffix):
+    ops.reset_default_graph()
+    fn = f'{sample_file}.{suffix}'
+    doc = DocumentArray([Document(uri=fn)])
+    encoder.encode(doc)
+    assert doc[0].embedding.shape == (128,)
+
+
+def test_encode_broken_uri(encoder, sample_file):
+    ops.reset_default_graph()
+    fn = f'{sample_file}.wav'
+    broken_fn = f'{sample_file}'
+    doc = DocumentArray([Document(uri=fn), Document(uri=broken_fn)])
+    encoder.encode(doc)
+    assert doc[0].embedding.shape == (128,)
+    assert doc[1].embedding is None
+
+
+def test_encode_waveform(audio_sample_rate):
+    ops.reset_default_graph()
+    x_audio, sample_rate = audio_sample_rate
+    model = VggishAudioEncoder(load_input_from='waveform')
+    docs = DocumentArray([Document(blob=x_audio, tags={'sample_rate': sample_rate})])
+    model.encode(docs=docs)
+    assert docs[0].embedding.shape == (128,)

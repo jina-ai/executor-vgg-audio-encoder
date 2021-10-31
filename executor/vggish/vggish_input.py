@@ -15,13 +15,11 @@ __license__ = "Apache-2.0"
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import numpy as np
 
 """Compute input examples for VGGish from audio waveform."""
 
 import resampy
-
-import sys
-import os
 
 from .vggish_params import *
 from .mel_features import *
@@ -38,6 +36,8 @@ except ImportError:
 
     def wav_read(wav_file):
         raise NotImplementedError('WAV file reading requires soundfile package.')
+
+import librosa as lr
 
 
 def waveform_to_examples(data, sample_rate):
@@ -100,4 +100,21 @@ def wavfile_to_examples(wav_file):
     wav_data, sr = wav_read(wav_file)
     assert wav_data.dtype == np.int16, 'Bad sample type: %r' % wav_data.dtype
     samples = wav_data / 32768.0  # Convert to [-1.0, +1.0]
+    return waveform_to_examples(samples, sr)
+
+
+def mp3file_to_examples(mp3_file):
+    '''
+    Convert MP3 files to log mel examples
+    Args:
+        mp3_file: String path to a file, or a file-lie object
+
+    Returns:
+        See waveform_to_examples
+
+    '''
+    data, sr = lr.load(mp3_file, dtype=np.int16)
+    if max(data) > 32768 or min(data) < -32768:
+        print(f'warning!!! max: {max(data)}, min: {min(data)}')
+    samples = data / 32768.0  # Convert to [-1.0, +1.0]
     return waveform_to_examples(samples, sr)

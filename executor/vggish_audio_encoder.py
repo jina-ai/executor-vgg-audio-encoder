@@ -28,7 +28,7 @@ class VggishAudioEncoder(Executor):
 
     def __init__(
         self,
-        model_path: str = Path(cur_dir) / 'models',
+        model_path: str = Path(cur_dir).parents[0] / 'models',
         load_input_from: str = 'uri',
         device: str = '/CPU:0',
         traversal_paths: Optional[Iterable[str]] = None,

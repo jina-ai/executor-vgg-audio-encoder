@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Tuple
 
 import librosa
+import numpy as np
 import pytest
 from executor.vggish import vggish_input
 from executor.vggish_audio_encoder import VggishAudioEncoder
@@ -23,7 +24,7 @@ def gpu_encoder() -> VggishAudioEncoder:
 @pytest.fixture(scope='function')
 def audio_sample_rate():
     x_audio, sample_rate = librosa.load(
-        Path(__file__).parents[1] / 'test_data/sample.wav'
+        str(Path(__file__).parents[1] / 'test_data' / 'sample.wav')
     )
     return x_audio, sample_rate
 

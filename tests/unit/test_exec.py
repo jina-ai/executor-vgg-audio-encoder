@@ -22,10 +22,13 @@ def gpu_encoder() -> VggishAudioEncoder:
 
 
 @pytest.fixture(scope='function')
-def audio_sample_rate():
-    x_audio, sample_rate = librosa.load(
-        str(Path(__file__).parents[1] / 'test_data' / 'sample.wav')
-    )
+def sample_file():
+    return str(Path(__file__).parents[1] / 'test_data' / 'sample')
+
+
+@pytest.fixture(scope='function')
+def audio_sample_rate(sample_file):
+    x_audio, sample_rate = librosa.load(f'{sample_file}.wav')
     return x_audio, sample_rate
 
 
@@ -126,3 +129,24 @@ def test_traversal_path(
     for path, count in counts:
         embeddings = nested_docs.traverse_flat([path]).get_attributes('embedding')
         assert len([em for em in embeddings if em is not None]) == count
+
+
+@pytest.mark.parametrize('suffix', ['mp3', 'wav'])
+def test_encode_wav_uri(sample_file, suffix):
+    ops.reset_default_graph()
+    model = VggishAudioEncoder(load_input_from='uri')
+    fn = f'{sample_file}.{suffix}'
+    doc = DocumentArray([Document(uri=fn)])
+    model.encode(doc)
+    assert doc[0].embedding.shape == (128,)
+
+
+def test_encode_multiple_wav_uri(sample_file):
+    ops.reset_default_graph()
+    model = VggishAudioEncoder(load_input_from='uri')
+    fn = f'{sample_file}.wav'
+    broken_fn = f'{sample_file}'
+    doc = DocumentArray([Document(uri=fn), Document(uri=broken_fn)])
+    model.encode(doc)
+    assert doc[0].embedding.shape == (128,)
+    assert doc[1].embedding is None

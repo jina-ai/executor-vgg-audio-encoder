@@ -1,3 +1,4 @@
+import glob
 from pathlib import Path
 from typing import Tuple
 
@@ -70,7 +71,7 @@ def test_encode_log_mel(audio_sample_rate):
     blob = vggish_input.waveform_to_examples(audio, sample_rate)
     docs = DocumentArray([Document(blob=blob)])
     model.encode(docs=docs)
-    assert docs[0].embedding.shape == (128,)
+    assert docs[0].embedding.shape == (1280,)
 
 
 @pytest.mark.parametrize('num_docs', [4, 16, 128])
@@ -80,7 +81,7 @@ def test_encode_multiple_documents(encoder: VggishAudioEncoder, sample_file, num
     docs = DocumentArray([Document(uri=fn) for _ in range(num_docs)])
     encoder.encode(docs, parameters={})
     for doc in docs:
-        assert doc.embedding.shape == (128,)
+        assert doc.embedding.shape == (1280,)
 
 
 @pytest.mark.gpu
@@ -90,7 +91,7 @@ def test_encode_gpu(audio_sample_rate):
     doc = DocumentArray([Document(blob=log_mel_examples)])
     model = VggishAudioEncoder(device='/GPU:0')
     model.encode(doc, parameters={})
-    assert doc[0].embedding.shape == (128,)
+    assert doc[0].embedding.shape == (1280,)
 
 
 @pytest.mark.parametrize(
@@ -121,7 +122,7 @@ def test_encode_uri(encoder, sample_file, suffix):
     fn = f'{sample_file}.{suffix}'
     doc = DocumentArray([Document(uri=fn)])
     encoder.encode(doc)
-    assert doc[0].embedding.shape == (128,)
+    assert doc[0].embedding.shape == (1280,)
 
 
 def test_encode_broken_uri(encoder, sample_file):
@@ -130,7 +131,7 @@ def test_encode_broken_uri(encoder, sample_file):
     broken_fn = f'{sample_file}'
     doc = DocumentArray([Document(uri=fn), Document(uri=broken_fn)])
     encoder.encode(doc)
-    assert doc[0].embedding.shape == (128,)
+    assert doc[0].embedding.shape == (1280,)
     assert doc[1].embedding is None
 
 
@@ -140,4 +141,37 @@ def test_encode_waveform(audio_sample_rate):
     model = VggishAudioEncoder(load_input_from='waveform')
     docs = DocumentArray([Document(blob=x_audio, tags={'sample_rate': sample_rate})])
     model.encode(docs=docs)
-    assert docs[0].embedding.shape == (128,)
+    assert docs[0].embedding.shape == (1280,)
+
+
+def test_embedding(encoder):
+    def get_label(uri):
+        return uri.split('.')[0].split('_')[-1]
+    audioset_path = Path(__file__).parents[1] / 'test_data' / 'audioset'
+    docs = DocumentArray()
+    for fn in glob.glob(f'{audioset_path}/*.mp3'):
+        doc = Document(uri=fn)
+        docs.append(doc)
+    encoder.encode(docs=docs)
+    q_docs = docs
+    q_docs.match(docs)
+    for d in q_docs:
+        q_label = get_label(d.uri)
+        if q_label == 'airplane':
+            for m in d.matches[:2]:
+                print(f'{m.scores["cosine"].value}')
+                assert q_label == get_label(m.uri)
+
+
+@pytest.mark.parametrize(('min_duration', 'is_none'), [[5, False], [15, True]])
+def test_min_duration(min_duration, is_none):
+    ops.reset_default_graph()
+    encoder = VggishAudioEncoder(min_duration=min_duration)
+    audioset_path = Path(__file__).parents[1] / 'test_data' / 'audioset'
+    docs = DocumentArray()
+    for fn in glob.glob(f'{audioset_path}/*.mp3'):
+        doc = Document(uri=fn)
+        docs.append(doc)
+    encoder.encode(docs=docs)
+    for d in docs:
+        assert (d.embedding is None) == is_none

@@ -12,7 +12,6 @@ RUN pip install -r requirements.txt
 COPY ./ /workspace
 WORKDIR /workspace
 
-RUN ./scripts/download_model.sh
 
 ENV PYTHONPATH=/workspace
 ENTRYPOINT ["jina", "executor", "--uses", "config.yml"]

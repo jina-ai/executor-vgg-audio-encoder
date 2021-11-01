@@ -28,8 +28,9 @@ class VggishAudioEncoder(Executor):
 
     def __init__(
         self,
-        model_path: str = Path(cur_dir) / 'models',
+        model_path: str = Path(cur_dir).parents[0] / 'models',
         load_input_from: str = 'uri',
+        min_duration: int = 10,
         device: str = '/CPU:0',
         traversal_paths: Optional[Iterable[str]] = None,
         batch_size: int = 32,
@@ -44,6 +45,7 @@ class VggishAudioEncoder(Executor):
             When set to 'uri', the model reads wave file (.mp3 or .wav) from the file path specified by the 'uri'.
             When set to 'log_mel', the model reads log melspectrogram array from the `blob` attribute.
             When set to 'waveform', the model reads wave form array from the `blob` attribute. This requires the sample rate information stored at `.tags['sample_rate']` as `float`.
+        :param min_duration: the minimal duration of the audio data in seconds. The input data will not be encoded if it is shorter than this duration.
         :param device: device to run the model on e.g. '/CPU:0','/GPU:0','/GPU:2'
         :param batch_size: Default batch size for encoding, used if the
             batch size is not passed as a parameter with the request.
@@ -55,6 +57,7 @@ class VggishAudioEncoder(Executor):
         self.traversal_paths = traversal_paths or ['r']
         self.logger = JinaLogger(self.__class__.__name__)
         self.device = device
+        self.min_duration = min_duration
         if load_input_from not in ('uri', 'log_mel', 'waveform'):
             self.logger.warning(f'unknown setting to load_input_form. Set to default value, load_input_from="uri"')
             load_input_from = 'uri'
@@ -171,8 +174,7 @@ class VggishAudioEncoder(Executor):
                     continue
                 emb = result[beg:beg+blob_shape, :]
                 beg += blob_shape
-                # convert the embedding to [-1, 1]
-                doc.embedding = np.mean((np.float32(emb) - 128.0) / 128.0, axis=0)
+                doc.embedding = np.float32(emb[:self.min_duration]).flatten()
 
     def _get_input_feature(self, batch_docs):
         mel_list = []
@@ -189,6 +191,9 @@ class VggishAudioEncoder(Executor):
                     self.logger.warning(f'skip {doc.uri}')
                     blob_shape_list.append(0)
                     continue
+                if blob.shape[0] < self.min_duration:
+                    blob_shape_list.append(0)
+                    continue
                 mel_list.append(blob)
                 blob_shape_list.append(blob.shape[0])
         elif self._input == 'waveform':
@@ -199,11 +204,20 @@ class VggishAudioEncoder(Executor):
                     data = np.mean(data, axis=0)
                 samples = data / 32768.0  # Convert to [-1.0, +1.0]
                 blob = waveform_to_examples(samples, sr)
+                if blob.shape[0] < self.min_duration:
+                    blob_shape_list.append(0)
+                    continue
                 blob_shape_list.append(blob.shape[0])
                 mel_list.append(blob)
         elif self._input == 'log_mel':
-            mel_list = batch_docs.get_attributes('blob')
-            blob_shape_list = [blob.shape[0] for blob in mel_list]
+            _mel_list = batch_docs.get_attributes('blob')
+            for blob in _mel_list:
+                if blob.shape[0] < self.min_duration:
+                    blob_shape_list.append(0)
+                    continue
+                else:
+                    blob_shape_list.append(blob.shape[0])
+                mel_list.append(blob)
         return blob_shape_list, mel_list
 
     def close(self):

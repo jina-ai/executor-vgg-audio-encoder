@@ -6,7 +6,7 @@ import pytest
 
 @pytest.fixture(scope='function')
 def sample_file():
-    return str(Path(__file__).parents[0] / 'test_data' / 'sample')
+    return str(Path(__file__).parents[0] / 'test_data' / 'audioset' / 'hhzoH17yf3o_20000_airplane')
 
 
 @pytest.fixture(scope='session')

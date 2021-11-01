@@ -4,5 +4,4 @@ with:
   return_results: true
 executors:
   - name: encoder
-    uses:
-      jtype: VggishAudioEncoder
+    uses: VggishAudioEncoder

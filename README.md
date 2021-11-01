@@ -17,4 +17,5 @@ With the Vggish model, `VggishAudioEncoder` encodes the audio data into a 128 * 
 
 The `embedding` is calculated by concating the embeddings of the first `min_duration` examples' embeddings. For example, a 10-second-long audio will have an embedding of 1280 dimensions. By default, `min_duration=10` and you can set in the `init()` function.
 
+
 For more information, such as run executor on gpu, check out [documentation](https://docs.jina.ai/tutorials/gpu-executor/).

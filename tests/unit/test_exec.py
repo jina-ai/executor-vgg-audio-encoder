@@ -1,3 +1,4 @@
+import glob
 from pathlib import Path
 from typing import Tuple
 
@@ -141,3 +142,36 @@ def test_encode_waveform(audio_sample_rate):
     docs = DocumentArray([Document(blob=x_audio, tags={'sample_rate': sample_rate})])
     model.encode(docs=docs)
     assert docs[0].embedding.shape == (128,)
+
+
+def test_embedding(encoder):
+    def get_label(uri):
+        return uri.split('.')[0].split('_')[-1]
+    audioset_path = Path(__file__).parents[1] / 'test_data' / 'audioset'
+    docs = DocumentArray()
+    for fn in glob.glob(f'{audioset_path}/*.mp3'):
+        doc = Document(uri=fn)
+        docs.append(doc)
+    encoder.encode(docs=docs)
+    q_docs = docs
+    q_docs.match(docs)
+    for d in q_docs:
+        q_label = get_label(d.uri)
+        if q_label == 'airplane':
+            for m in d.matches[:2]:
+                print(f'{m.scores["cosine"].value}')
+                assert q_label == get_label(m.uri)
+
+
+@pytest.mark.parametrize(('min_duration', 'is_none'), [[5, False], [15, True]])
+def test_min_duration(min_duration, is_none):
+    ops.reset_default_graph()
+    encoder = VggishAudioEncoder(min_duration=min_duration)
+    audioset_path = Path(__file__).parents[1] / 'test_data' / 'audioset'
+    docs = DocumentArray()
+    for fn in glob.glob(f'{audioset_path}/*.mp3'):
+        doc = Document(uri=fn)
+        docs.append(doc)
+    encoder.encode(docs=docs)
+    for d in docs:
+        assert (d.embedding is None) == is_none

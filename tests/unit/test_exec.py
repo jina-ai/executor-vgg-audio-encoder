@@ -104,7 +104,7 @@ def test_encode_gpu(audio_sample_rate):
     ],
 )
 def test_traversal_path(
-    traversal_paths: Tuple[str],
+    traversal_paths: str,
     counts: Tuple[str, int],
     nested_docs: DocumentArray,
     encoder: VggishAudioEncoder,
@@ -112,7 +112,7 @@ def test_traversal_path(
     ops.reset_default_graph()
     encoder.encode(nested_docs, parameters={"traversal_paths": traversal_paths})
     for path, count in counts:
-        embeddings = nested_docs.traverse_flat([path]).get_attributes('embedding')
+        embeddings = nested_docs.traverse_flat(path).get_attributes('embedding')
         assert len([em for em in embeddings if em is not None]) == count
 
 

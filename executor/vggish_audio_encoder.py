@@ -32,7 +32,7 @@ class VggishAudioEncoder(Executor):
         load_input_from: str = 'uri',
         min_duration: int = 10,
         device: str = '/CPU:0',
-        traversal_paths: Optional[Iterable[str]] = None,
+        traversal_paths: str = None,
         batch_size: int = 32,
         *args,
         **kwargs,
@@ -54,7 +54,7 @@ class VggishAudioEncoder(Executor):
         """
 
         super().__init__(*args, **kwargs)
-        self.traversal_paths = traversal_paths or ['r']
+        self.traversal_paths = traversal_paths or 'r'
         self.logger = JinaLogger(self.__class__.__name__)
         self.device = device
         self.min_duration = min_duration
@@ -142,7 +142,7 @@ class VggishAudioEncoder(Executor):
         :param docs: documents sent to the encoder. The docs must have `text`.
             By default, the input `text` must be a `list` of `str`.
         :param parameters: dictionary to define the `traversal_paths` and the
-            `batch_size`. For example, `parameters={'traversal_paths': ['r'],
+            `batch_size`. For example, `parameters={'traversal_paths': 'r',
             'batch_size': 10}`.
         :param kwargs: Additional key value arguments.
         :return:

@@ -3,7 +3,7 @@ __license__ = "Apache-2.0"
 
 import os
 from pathlib import Path
-from typing import Iterable, Optional
+from typing import Optional
 
 import numpy as np
 import requests as _requests
@@ -32,7 +32,7 @@ class VggishAudioEncoder(Executor):
         load_input_from: str = 'uri',
         min_duration: int = 10,
         device: str = '/CPU:0',
-        traversal_paths: Optional[Iterable[str]] = None,
+        traversal_paths: Optional[str] = None,
         batch_size: int = 32,
         *args,
         **kwargs,
@@ -54,7 +54,7 @@ class VggishAudioEncoder(Executor):
         """
 
         super().__init__(*args, **kwargs)
-        self.traversal_paths = traversal_paths or ['r']
+        self.traversal_paths = traversal_paths or 'r'
         self.logger = JinaLogger(self.__class__.__name__)
         self.device = device
         self.min_duration = min_duration
@@ -62,10 +62,6 @@ class VggishAudioEncoder(Executor):
             self.logger.warning(f'unknown setting to load_input_form. Set to default value, load_input_from="uri"')
             load_input_from = 'uri'
         self._input = load_input_from
-        if self._input == 'uri':
-            self._require_attr = 'uri'
-        elif self._input in ('log_mel', 'waveform'):
-            self._require_attr = 'blob'
         self.model_path = Path(model_path)
         self.vgg_model_path = self.model_path / 'vggish_model.ckpt'
         self.pca_model_path = self.model_path / 'vggish_pca_params.ckpt'
@@ -135,7 +131,7 @@ class VggishAudioEncoder(Executor):
         self.batch_size = batch_size
 
     @requests
-    def encode(self, docs: Optional[DocumentArray], parameters: dict = {}, **kwargs):
+    def encode(self, docs: DocumentArray, parameters: dict = {}, **kwargs):
         """
         Compute embeddings and store them in the `docs` array.
 
@@ -147,13 +143,11 @@ class VggishAudioEncoder(Executor):
         :param kwargs: Additional key value arguments.
         :return:
         """
-        if not docs:
-            return
 
-        document_batches_generator = docs.batch(
-            traversal_paths=parameters.get('traversal_paths', self.traversal_paths),
+        traversed_docs = docs.traverse_flat(parameters.get('traversal_paths', self.traversal_paths))
+
+        document_batches_generator = traversed_docs.batch(
             batch_size=parameters.get('batch_size', self.batch_size),
-            require_attr=self._require_attr,
         )
 
         for batch_docs in document_batches_generator:

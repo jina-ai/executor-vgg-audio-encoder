@@ -51,11 +51,6 @@ def test_no_documents(encoder: VggishAudioEncoder):
     assert len(docs) == 0  # SUCCESS
 
 
-def test_none_docs(encoder: VggishAudioEncoder):
-    ops.reset_default_graph()
-    encoder.encode(docs=None)
-
-
 def test_docs_no_blobs(encoder: VggishAudioEncoder):
     ops.reset_default_graph()
     docs = DocumentArray([Document()])
@@ -97,10 +92,10 @@ def test_encode_gpu(audio_sample_rate):
 @pytest.mark.parametrize(
     "traversal_paths, counts",
     [
-        [('c',), (('r', 0), ('c', 3), ('cc', 0))],
-        [('cc',), (("r", 0), ('c', 0), ('cc', 2))],
-        [('r',), (('r', 1), ('c', 0), ('cc', 0))],
-        [('cc', 'r'), (('r', 1), ('c', 0), ('cc', 2))],
+        ['c', (('r', 0), ('c', 3), ('cc', 0))],
+        ['cc', (('r', 0), ('c', 0), ('cc', 2))],
+        ['r', (('r', 1), ('c', 0), ('cc', 0))],
+        [['cc', 'r'], (('r', 1), ('c', 0), ('cc', 2))],
     ],
 )
 def test_traversal_path(
@@ -110,9 +105,9 @@ def test_traversal_path(
     encoder: VggishAudioEncoder,
 ):
     ops.reset_default_graph()
-    encoder.encode(nested_docs, parameters={"traversal_paths": traversal_paths})
+    encoder.encode(nested_docs, parameters={'traversal_paths': traversal_paths})
     for path, count in counts:
-        embeddings = nested_docs.traverse_flat([path]).get_attributes('embedding')
+        embeddings = nested_docs.traverse_flat(path).get_attributes('embedding')
         assert len([em for em in embeddings if em is not None]) == count
 
 

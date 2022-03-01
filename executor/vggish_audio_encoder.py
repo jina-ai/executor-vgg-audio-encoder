@@ -145,9 +145,7 @@ class VggishAudioEncoder(Executor):
         """
 
         docs_batch_generator = DocumentArray(
-            filter(
-                docs[parameters.get('traversal_paths', self.traversal_paths)],
-            )
+            docs[parameters.get('traversal_paths', self.traversal_paths)],
         ).batch(batch_size=parameters.get('batch_size', self.batch_size))
 
         for batch_docs in document_batches_generator:

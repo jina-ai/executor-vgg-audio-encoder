@@ -6,8 +6,7 @@ import librosa
 import pytest
 from executor.vggish import vggish_input
 from executor.vggish_audio_encoder import VggishAudioEncoder
-from jina import Executor
-from Docarray import Document, DocumentArray
+from jina import Document, DocumentArray, Executor
 from tensorflow.python.framework import ops
 
 

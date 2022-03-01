@@ -8,8 +8,7 @@ from typing import Optional
 import numpy as np
 import requests as _requests
 import tensorflow as tf
-from jina import Executor, requests
-from docarray import DocumentArray
+from jina import DocumentArray, Executor, requests
 from jina.logging.logger import JinaLogger
 
 from .vggish.vggish_params import INPUT_TENSOR_NAME, OUTPUT_TENSOR_NAME

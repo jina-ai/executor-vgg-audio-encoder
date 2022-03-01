@@ -32,7 +32,7 @@ class VggishAudioEncoder(Executor):
         load_input_from: str = 'uri',
         min_duration: int = 10,
         device: str = '/CPU:0',
-        traversal_paths: str = None,
+        traversal_paths: str = '@r',
         batch_size: int = 32,
         *args,
         **kwargs,
@@ -54,7 +54,7 @@ class VggishAudioEncoder(Executor):
         """
 
         super().__init__(*args, **kwargs)
-        self.traversal_paths = traversal_paths or '@r'
+        self.traversal_paths = traversal_paths
         self.logger = JinaLogger(self.__class__.__name__)
         self.device = device
         self.min_duration = min_duration
@@ -202,7 +202,7 @@ class VggishAudioEncoder(Executor):
                 blob_shape_list.append(blob.shape[0])
                 mel_list.append(blob)
         elif self._input == 'log_mel':
-            _mel_list = batch_docs.blobs
+            _mel_list = batch_docs.tensors
             for blob in _mel_list:
                 if blob.shape[0] < self.min_duration:
                     blob_shape_list.append(0)

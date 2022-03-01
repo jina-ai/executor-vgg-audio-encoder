@@ -63,8 +63,8 @@ def test_encode_log_mel(audio_sample_rate):
     ops.reset_default_graph()
     model = VggishAudioEncoder(load_input_from='log_mel')
     audio, sample_rate = audio_sample_rate
-    blob = vggish_input.waveform_to_examples(audio, sample_rate)
-    docs = DocumentArray([Document(blob=blob)])
+    tensor = vggish_input.waveform_to_examples(audio, sample_rate)
+    docs = DocumentArray([Document(tensor=tensor)])
     model.encode(docs=docs)
     assert docs[0].embedding.shape == (1280,)
 
@@ -83,7 +83,7 @@ def test_encode_multiple_documents(encoder: VggishAudioEncoder, sample_file, num
 def test_encode_gpu(audio_sample_rate):
     x_audio, sample_rate = audio_sample_rate
     log_mel_examples = vggish_input.waveform_to_examples(x_audio, sample_rate)
-    doc = DocumentArray([Document(blob=log_mel_examples)])
+    doc = DocumentArray([Document(tensor=log_mel_examples)])
     model = VggishAudioEncoder(device='/GPU:0')
     model.encode(doc, parameters={})
     assert doc[0].embedding.shape == (1280,)
@@ -137,7 +137,7 @@ def test_encode_waveform(audio_sample_rate):
     ops.reset_default_graph()
     x_audio, sample_rate = audio_sample_rate
     model = VggishAudioEncoder(load_input_from='waveform')
-    docs = DocumentArray([Document(blob=x_audio, tags={'sample_rate': sample_rate})])
+    docs = DocumentArray([Document(tensor=x_audio, tags={'sample_rate': sample_rate})])
     model.encode(docs=docs)
     assert docs[0].embedding.shape == (1280,)
 

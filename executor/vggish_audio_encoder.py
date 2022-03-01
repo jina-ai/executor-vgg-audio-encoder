@@ -170,47 +170,47 @@ class VggishAudioEncoder(Executor):
 
     def _get_input_feature(self, batch_docs):
         mel_list = []
-        blob_shape_list = []
+        tensor_shape_list = []
         if self._input == 'uri':
             for doc in batch_docs:
                 f_suffix = Path(doc.uri).suffix
                 if f_suffix == '.wav':
-                    blob = wavfile_to_examples(doc.uri)
+                    tensor = wavfile_to_examples(doc.uri)
                 elif f_suffix == '.mp3':
-                    blob = mp3file_to_examples(doc.uri)
+                    tensor = mp3file_to_examples(doc.uri)
                 else:
                     self.logger.warning(f'unsupported format {f_suffix}. Please use .mp3 or .wav')
                     self.logger.warning(f'skip {doc.uri}')
-                    blob_shape_list.append(0)
+                    tensor_shape_list.append(0)
                     continue
-                if blob.shape[0] < self.min_duration:
-                    blob_shape_list.append(0)
+                if tensor.shape[0] < self.min_duration:
+                    tensor_shape_list.append(0)
                     continue
-                mel_list.append(blob)
-                blob_shape_list.append(blob.shape[0])
+                mel_list.append(tensor)
+                blob_shape_list.append(tensor.shape[0])
         elif self._input == 'waveform':
             for doc in batch_docs:
-                data = doc.blob
+                data = doc.tensor
                 sr = doc.tags['sample_rate']
                 if len(data.shape) > 1:
                     data = np.mean(data, axis=0)
                 samples = data / 32768.0  # Convert to [-1.0, +1.0]
-                blob = waveform_to_examples(samples, sr)
-                if blob.shape[0] < self.min_duration:
-                    blob_shape_list.append(0)
+                tensor = waveform_to_examples(samples, sr)
+                if tensor.shape[0] < self.min_duration:
+                    tensor_shape_list.append(0)
                     continue
-                blob_shape_list.append(blob.shape[0])
-                mel_list.append(blob)
+                tensor_shape_list.append(tensor.shape[0])
+                mel_list.append(tensor)
         elif self._input == 'log_mel':
             _mel_list = batch_docs.tensors
-            for blob in _mel_list:
-                if blob.shape[0] < self.min_duration:
-                    blob_shape_list.append(0)
+            for tensor in _mel_list:
+                if tensor.shape[0] < self.min_duration:
+                    tensor_shape_list.append(0)
                     continue
                 else:
-                    blob_shape_list.append(blob.shape[0])
-                mel_list.append(blob)
-        return blob_shape_list, mel_list
+                    blob_shape_list.append(tensor.shape[0])
+                mel_list.append(tensor)
+        return tensor_shape_list, mel_list
 
     def close(self):
         self.sess.close()

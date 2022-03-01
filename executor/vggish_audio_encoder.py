@@ -202,7 +202,7 @@ class VggishAudioEncoder(Executor):
                 blob_shape_list.append(blob.shape[0])
                 mel_list.append(blob)
         elif self._input == 'log_mel':
-            _mel_list = batch_docs.get_attributes('blob')
+            _mel_list = batch_docs.blobs
             for blob in _mel_list:
                 if blob.shape[0] < self.min_duration:
                     blob_shape_list.append(0)

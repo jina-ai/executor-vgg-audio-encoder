@@ -107,7 +107,7 @@ def test_traversal_path(
     ops.reset_default_graph()
     encoder.encode(nested_docs, parameters={'traversal_paths': traversal_paths})
     for path, count in counts:
-        embeddings = nested_docs[path].get_attributes('embedding')
+        embeddings = nested_docs[path].embeddings
         if count != 0:
             assert len([em for em in embeddings if em is not None]) == count
         else:

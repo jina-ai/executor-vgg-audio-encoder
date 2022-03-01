@@ -8,7 +8,8 @@ from typing import Optional
 import numpy as np
 import requests as _requests
 import tensorflow as tf
-from jina import DocumentArray, Executor, requests
+from jina import Executor, requests
+from docarray import DocumentArray
 from jina.logging.logger import JinaLogger
 
 from .vggish.vggish_params import INPUT_TENSOR_NAME, OUTPUT_TENSOR_NAME
@@ -32,7 +33,7 @@ class VggishAudioEncoder(Executor):
         load_input_from: str = 'uri',
         min_duration: int = 10,
         device: str = '/CPU:0',
-        traversal_paths: Optional[str] = None,
+        traversal_paths: str = None,
         batch_size: int = 32,
         *args,
         **kwargs,
@@ -54,7 +55,7 @@ class VggishAudioEncoder(Executor):
         """
 
         super().__init__(*args, **kwargs)
-        self.traversal_paths = traversal_paths or 'r'
+        self.traversal_paths = traversal_paths or '@r'
         self.logger = JinaLogger(self.__class__.__name__)
         self.device = device
         self.min_duration = min_duration
@@ -143,8 +144,8 @@ class VggishAudioEncoder(Executor):
         :param kwargs: Additional key value arguments.
         :return:
         """
-
-        traversed_docs = docs.traverse_flat(parameters.get('traversal_paths', self.traversal_paths))
+        tpaths = parameters.get('traversal_paths', self.traversal_paths)
+        traversed_docs = docs[f'@{tpaths}']
 
         document_batches_generator = traversed_docs.batch(
             batch_size=parameters.get('batch_size', self.batch_size),

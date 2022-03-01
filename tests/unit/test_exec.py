@@ -6,7 +6,8 @@ import librosa
 import pytest
 from executor.vggish import vggish_input
 from executor.vggish_audio_encoder import VggishAudioEncoder
-from jina import Document, DocumentArray, Executor
+from jina import Executor
+from Docarray import Document, DocumentArray
 from tensorflow.python.framework import ops
 
 
@@ -95,11 +96,11 @@ def test_encode_gpu(audio_sample_rate):
         ['c', (('r', 0), ('c', 3), ('cc', 0))],
         ['cc', (('r', 0), ('c', 0), ('cc', 2))],
         ['r', (('r', 1), ('c', 0), ('cc', 0))],
-        [['cc', 'r'], (('r', 1), ('c', 0), ('cc', 2))],
+        ['cc, r', (('r', 1), ('c', 0), ('cc', 2))],
     ],
 )
 def test_traversal_path(
-    traversal_paths: Tuple[str],
+    traversal_paths: str,
     counts: Tuple[str, int],
     nested_docs: DocumentArray,
     encoder: VggishAudioEncoder,
@@ -107,7 +108,7 @@ def test_traversal_path(
     ops.reset_default_graph()
     encoder.encode(nested_docs, parameters={'traversal_paths': traversal_paths})
     for path, count in counts:
-        embeddings = nested_docs.traverse_flat(path).get_attributes('embedding')
+        embeddings = nested_docs[f'@{path}'].get_attributes('embedding')
         assert len([em for em in embeddings if em is not None]) == count
 
 

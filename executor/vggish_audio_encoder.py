@@ -144,7 +144,7 @@ class VggishAudioEncoder(Executor):
         :return:
         """
 
-        docs_batch_generator = DocumentArray(
+        document_batches_generator = DocumentArray(
             docs[parameters.get('traversal_paths', self.traversal_paths)],
         ).batch(batch_size=parameters.get('batch_size', self.batch_size))
 

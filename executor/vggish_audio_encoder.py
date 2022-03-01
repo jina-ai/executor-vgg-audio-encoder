@@ -149,7 +149,7 @@ class VggishAudioEncoder(Executor):
         ).batch(batch_size=parameters.get('batch_size', self.batch_size))
 
         for batch_docs in document_batches_generator:
-            blob_shape_list, mel_list = self._get_input_feature(batch_docs)
+            tensor_shape_list, mel_list = self._get_input_feature(batch_docs)
             try:
                 mel_array = np.vstack(mel_list)
             except ValueError as e:
@@ -161,11 +161,11 @@ class VggishAudioEncoder(Executor):
             )
             result = self.post_processor.postprocess(embeddings)
             beg = 0
-            for doc, blob_shape in zip(batch_docs, blob_shape_list):
-                if blob_shape == 0:
+            for doc, tensor_shape in zip(batch_docs, tensor_shape_list):
+                if tensor_shape == 0:
                     continue
-                emb = result[beg:beg+blob_shape, :]
-                beg += blob_shape
+                emb = result[beg:beg+tensor_shape, :]
+                beg += tensor_shape
                 doc.embedding = np.float32(emb[:self.min_duration]).flatten()
 
     def _get_input_feature(self, batch_docs):
@@ -187,7 +187,7 @@ class VggishAudioEncoder(Executor):
                     tensor_shape_list.append(0)
                     continue
                 mel_list.append(tensor)
-                blob_shape_list.append(tensor.shape[0])
+                tensor_shape_list.append(tensor.shape[0])
         elif self._input == 'waveform':
             for doc in batch_docs:
                 data = doc.tensor
@@ -208,7 +208,7 @@ class VggishAudioEncoder(Executor):
                     tensor_shape_list.append(0)
                     continue
                 else:
-                    blob_shape_list.append(tensor.shape[0])
+                    tensor_shape_list.append(tensor.shape[0])
                 mel_list.append(tensor)
         return tensor_shape_list, mel_list
 

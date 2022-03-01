@@ -143,12 +143,12 @@ class VggishAudioEncoder(Executor):
         :param kwargs: Additional key value arguments.
         :return:
         """
-        tpaths = parameters.get('traversal_paths', self.traversal_paths)
-        traversed_docs = docs[f'@{tpaths}']
 
-        document_batches_generator = traversed_docs.batch(
-            batch_size=parameters.get('batch_size', self.batch_size),
-        )
+        docs_batch_generator = DocumentArray(
+            filter(
+                docs[parameters.get('traversal_paths', self.traversal_paths)],
+            )
+        ).batch(batch_size=parameters.get('batch_size', self.batch_size))
 
         for batch_docs in document_batches_generator:
             blob_shape_list, mel_list = self._get_input_feature(batch_docs)

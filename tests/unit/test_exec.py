@@ -63,8 +63,8 @@ def test_encode_log_mel(audio_sample_rate):
     ops.reset_default_graph()
     model = VggishAudioEncoder(load_input_from='log_mel')
     audio, sample_rate = audio_sample_rate
-    blob = vggish_input.waveform_to_examples(audio, sample_rate)
-    docs = DocumentArray([Document(blob=blob)])
+    tensor = vggish_input.waveform_to_examples(audio, sample_rate)
+    docs = DocumentArray([Document(tensor=tensor)])
     model.encode(docs=docs)
     assert docs[0].embedding.shape == (1280,)
 
@@ -83,7 +83,7 @@ def test_encode_multiple_documents(encoder: VggishAudioEncoder, sample_file, num
 def test_encode_gpu(audio_sample_rate):
     x_audio, sample_rate = audio_sample_rate
     log_mel_examples = vggish_input.waveform_to_examples(x_audio, sample_rate)
-    doc = DocumentArray([Document(blob=log_mel_examples)])
+    doc = DocumentArray([Document(tensor=log_mel_examples)])
     model = VggishAudioEncoder(device='/GPU:0')
     model.encode(doc, parameters={})
     assert doc[0].embedding.shape == (1280,)
@@ -92,14 +92,14 @@ def test_encode_gpu(audio_sample_rate):
 @pytest.mark.parametrize(
     "traversal_paths, counts",
     [
-        ['c', (('r', 0), ('c', 3), ('cc', 0))],
-        ['cc', (('r', 0), ('c', 0), ('cc', 2))],
-        ['r', (('r', 1), ('c', 0), ('cc', 0))],
-        [['cc', 'r'], (('r', 1), ('c', 0), ('cc', 2))],
+        ['@c', (('@r', 0), ('@c', 3), ('@cc', 0))],
+        ['@cc', (('@r', 0), ('@c', 0), ('@cc', 2))],
+        ['@r', (('@r', 1), ('@c', 0), ('@cc', 0))],
+        ['@cc,r', (('@r', 1), ('@c', 0), ('@cc', 2))],
     ],
 )
 def test_traversal_path(
-    traversal_paths: Tuple[str],
+    traversal_paths: str,
     counts: Tuple[str, int],
     nested_docs: DocumentArray,
     encoder: VggishAudioEncoder,
@@ -107,8 +107,11 @@ def test_traversal_path(
     ops.reset_default_graph()
     encoder.encode(nested_docs, parameters={'traversal_paths': traversal_paths})
     for path, count in counts:
-        embeddings = nested_docs.traverse_flat(path).get_attributes('embedding')
-        assert len([em for em in embeddings if em is not None]) == count
+        embeddings = nested_docs[path].embeddings
+        if count != 0:
+            assert len([em for em in embeddings if em is not None]) == count
+        else:
+            assert embeddings is None
 
 
 @pytest.mark.parametrize('suffix', ['mp3', 'wav'])
@@ -134,7 +137,7 @@ def test_encode_waveform(audio_sample_rate):
     ops.reset_default_graph()
     x_audio, sample_rate = audio_sample_rate
     model = VggishAudioEncoder(load_input_from='waveform')
-    docs = DocumentArray([Document(blob=x_audio, tags={'sample_rate': sample_rate})])
+    docs = DocumentArray([Document(tensor=x_audio, tags={'sample_rate': sample_rate})])
     model.encode(docs=docs)
     assert docs[0].embedding.shape == (1280,)
 

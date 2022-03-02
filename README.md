@@ -3,8 +3,8 @@
 **VggishAudioEncoder** is a class that wraps the [VGGISH](https://github.com/tensorflow/models/tree/master/research/audioset/vggish) model for generating embeddings for audio data. 
 
 The input audio data is expected to be 
-- the log mel spectrogram features stored in `blob` attribute
-- the waveform data stored in `blob` attribute together with the sampling rate information stored in `tags['sample_rate']` as a float number
+- the log mel spectrogram features stored in `tensor` attribute
+- the waveform data stored in `tensor` attribute together with the sampling rate information stored in `tags['sample_rate']` as a float number
 - the file path information of a `.mp3` or `.wav` file stored in the `uri` attribute
 
 You need to set `load_input_from` argument in the `init()` function to specify from where the audio data is stored. By default, it is set to `uri`.

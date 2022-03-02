@@ -20,4 +20,4 @@ def test_embedding_exists(sample_file, config_file):
     doc = DocumentArray([Document(uri=fn)])
     with Flow.load_config(config_file) as f:
         resp = f.post(on='/index', inputs=doc, return_results=True)
-    assert resp[0].docs[0].embedding is not None
+    assert resp[0].embedding is not None

@@ -16,6 +16,8 @@ from .vggish.vggish_postprocess import Postprocessor
 from .vggish.vggish_slim import define_vggish_slim, load_vggish_slim_checkpoint
 from .vggish.vggish_input import wavfile_to_examples, mp3file_to_examples, waveform_to_examples
 
+import warnings
+
 tf.compat.v1.disable_eager_execution()
 
 cur_dir = os.path.dirname(os.path.abspath(__file__))
@@ -32,7 +34,8 @@ class VggishAudioEncoder(Executor):
         load_input_from: str = 'uri',
         min_duration: int = 10,
         device: str = '/CPU:0',
-        traversal_paths: str = '@r',
+        access_paths: str = '@r',
+        traversal_paths: Optional[str] = None,
         batch_size: int = 32,
         *args,
         **kwargs,
@@ -49,12 +52,19 @@ class VggishAudioEncoder(Executor):
         :param device: device to run the model on e.g. '/CPU:0','/GPU:0','/GPU:2'
         :param batch_size: Default batch size for encoding, used if the
             batch size is not passed as a parameter with the request.
-        :param traversal_paths: fallback batch size in case there is not
+        :param access_paths: fallback batch size in case there is not
             batch size sent in the request
+        :param traversal_paths: please use access_paths
         """
 
         super().__init__(*args, **kwargs)
-        self.traversal_paths = traversal_paths
+        if traversal_paths is not None:
+            self.access_paths = traversal_paths
+            warnings.warn("'traversal_paths' will be deprecated in the future, please use 'access_paths'.",
+                          DeprecationWarning,
+                          stacklevel=2)
+        else:
+            self.access_paths = access_paths
         self.logger = JinaLogger(self.__class__.__name__)
         self.device = device
         self.min_duration = min_duration
@@ -137,15 +147,15 @@ class VggishAudioEncoder(Executor):
 
         :param docs: documents sent to the encoder. The docs must have `text`.
             By default, the input `text` must be a `list` of `str`.
-        :param parameters: dictionary to define the `traversal_paths` and the
-            `batch_size`. For example, `parameters={'traversal_paths': ['r'],
+        :param parameters: dictionary to define the `access_paths` and the
+            `batch_size`. For example, `parameters={'access_paths': ['r'],
             'batch_size': 10}`.
         :param kwargs: Additional key value arguments.
         :return:
         """
 
         document_batches_generator = DocumentArray(
-            docs[parameters.get('traversal_paths', self.traversal_paths)],
+            docs[parameters.get('access_paths', self.access_paths)],
         ).batch(batch_size=parameters.get('batch_size', self.batch_size))
 
         for batch_docs in document_batches_generator:
